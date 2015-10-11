@@ -28,11 +28,14 @@ import java.util.Set;
 public class MainActivityFragment extends Fragment {
 
 
+    public static final String SS_ORDER = "SS_ORDER";
+
     public MainActivityFragment() {
     }
 
     public final String ORDER_POPULARITY = "popularity";
     public final String ORDER_VOTES = "vote_average";
+    private static final String ORDER_FAVORITES = "favorites";
 
 
     private GridView movieGrid;
@@ -75,19 +78,20 @@ public class MainActivityFragment extends Fragment {
 
     //Based on a stackoverflow snippet(Taken from reviewer.)
     private boolean isNetworkAvailable() {
+        if(mActivity == null)
+            return false;
         ConnectivityManager connectivityManager
-                = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+                = (ConnectivityManager) mActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private void fetchAndDisplayMovies() {
-        if (isNetworkAvailable())
+        if (isNetworkAvailable() && order != ORDER_FAVORITES)
             new MoviesListFetcherTask().execute(order);
         else
             fetchAndDisplayFavorites();
     }
-
 
     private void addMoviesToAdapter() {
         mAdapter.clear();
@@ -117,6 +121,7 @@ public class MainActivityFragment extends Fragment {
             fetchAndDisplayMovies();
             return true;
         } else if (id == R.id.action_favorite) {
+            order = ORDER_FAVORITES;
             //fetchAndDisplayFavoriteMoviesFromPrefs();
             fetchAndDisplayFavorites();
         }

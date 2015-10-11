@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
@@ -122,11 +124,13 @@ public class MovieDetailActivityFragment extends Fragment {
     }
 
     private void fetchAndDisplayMovieTrailers() {
-        new MovieTrailersFetcherTask().execute(movie.id);
+        if (isNetworkAvailable())
+            new MovieTrailersFetcherTask().execute(movie.id);
     }
 
     private void fetchAndDisplayMovieReviews() {
-        new MovieReviewsFetcherTask().execute(movie.id);
+        if (isNetworkAvailable())
+            new MovieReviewsFetcherTask().execute(movie.id);
     }
 
     void DisplayMovieDetails() {
@@ -161,6 +165,16 @@ public class MovieDetailActivityFragment extends Fragment {
         try {
             ((withShare) mActivity).setShareIntent(shareIntent);
         } catch (ClassCastException e) {}
+    }
+
+    //Based on a stackoverflow snippet(Taken from reviewer.)
+    private boolean isNetworkAvailable() {
+        if(mActivity == null)
+            return false;
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) mActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private class MovieTrailersFetcherTask extends AsyncTask<String, Integer, ArrayList<Object>> {
