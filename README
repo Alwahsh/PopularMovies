@@ -1,0 +1,8 @@
+You need to put your API Key before using the app.
+
+open File:
+app/src/main/java/com/example/themonster/popularmovies/TheMovieDbInterface.java
+
+Search for:
+PUTYOURKEYHERE
+and replace it with your API Key.
