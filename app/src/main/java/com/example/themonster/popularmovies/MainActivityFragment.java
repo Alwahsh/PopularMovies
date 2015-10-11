@@ -1,12 +1,16 @@
 package com.example.themonster.popularmovies;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +39,7 @@ public class MainActivityFragment extends Fragment {
     private MoviePostersAdapter mAdapter;
     private ArrayList<Movie> movies;
     private String order = ORDER_POPULARITY;
+    private Activity mActivity = null;
 
     public interface callBack {
         void onItemClick(Movie movie);
@@ -45,11 +50,20 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
         movieGrid = (GridView) view.findViewById(R.id.main_movies_grid);
-        mAdapter = new MoviePostersAdapter(getActivity(),R.layout.movie_poster);
-        movieGrid.setAdapter(mAdapter);
-        fetchAndDisplayMovies();
-        movieGrid.setOnItemClickListener(mAdapterClickListener);
+        if (mActivity != null) {
+            mAdapter = new MoviePostersAdapter(mActivity, R.layout.movie_poster);
+            movieGrid.setAdapter(mAdapter);
+            fetchAndDisplayMovies();
+            movieGrid.setOnItemClickListener(mAdapterClickListener);
+        }
         return view;
+    }
+
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mActivity = activity;
     }
 
     @Override
@@ -59,16 +73,21 @@ public class MainActivityFragment extends Fragment {
     }
 
 
-    private void fetchAndDisplayMovies() {
-        new MoviesListFetcherTask().execute(order);
+    //Based on a stackoverflow snippet(Taken from reviewer.)
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    private void fetchAndDisplayFavoriteMoviesFromPrefs() {
-        new FavoriteMoviesListFetcherTask().execute(getActivity().getSharedPreferences(
-                getString(R.string.shared_pref_key), Context.MODE_PRIVATE
-        ).getStringSet(getString(R.string.shared_pref_fav_movies), new HashSet<String>()));
+    private void fetchAndDisplayMovies() {
+        if (isNetworkAvailable())
+            new MoviesListFetcherTask().execute(order);
+        else
+            fetchAndDisplayFavorites();
     }
+
 
     private void addMoviesToAdapter() {
         mAdapter.clear();
@@ -82,7 +101,7 @@ public class MainActivityFragment extends Fragment {
     private AdapterView.OnItemClickListener mAdapterClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            ((callBack)getActivity()).onItemClick(movies.get(position));
+            ((callBack)mActivity).onItemClick(movies.get(position));
         }
     };
 
@@ -105,7 +124,9 @@ public class MainActivityFragment extends Fragment {
     }
 
     private void fetchAndDisplayFavorites() {
-        Cursor cursor = getActivity().getContentResolver().query(MoviesTable.CONTENT_URI,null,null,null,null,null);
+        Cursor cursor = null;
+        if (mActivity != null)
+            cursor = mActivity.getContentResolver().query(MoviesTable.CONTENT_URI, null, null, null, null, null);
         if (cursor == null)
             movies = new ArrayList<Movie>();
         else
@@ -121,19 +142,6 @@ public class MainActivityFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(ArrayList<Movie> result) {
-            movies = result;
-            addMoviesToAdapter();
-        }
-    }
-
-    private class FavoriteMoviesListFetcherTask extends AsyncTask<Set<String>, Integer, ArrayList<Movie>> {
-
-        @Override
-        protected ArrayList<Movie> doInBackground(Set<String>... ids) {
-            return TheMovieDbInterface.FetchFavoriteMoviesList(ids[0]);
-        }
-
         protected void onPostExecute(ArrayList<Movie> result) {
             movies = result;
             addMoviesToAdapter();

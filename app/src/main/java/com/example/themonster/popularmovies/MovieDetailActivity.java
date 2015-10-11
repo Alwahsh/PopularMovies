@@ -22,7 +22,7 @@ public class MovieDetailActivity extends ActionBarActivity implements MovieDetai
         if (savedInstanceState == null) {
             Fragment frag = new MovieDetailActivityFragment();
             Bundle args = new Bundle();
-            args.putSerializable(MovieDetailActivityFragment.MOVIE_ID, getIntent().getSerializableExtra(MovieDetailActivityFragment.MOVIE_ID));
+            args.putParcelable(MovieDetailActivityFragment.MOVIE_ID, getIntent().getParcelableExtra(MovieDetailActivityFragment.MOVIE_ID));
             frag.setArguments(args);
             getSupportFragmentManager().beginTransaction().add(R.id.movie_details_container, frag).commit();
         }

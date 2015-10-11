@@ -1,5 +1,6 @@
 package com.example.themonster.popularmovies;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,6 +34,8 @@ public class MovieDetailActivityFragment extends Fragment {
 
     public static final String MOVIE_ID = "movie_id";
 
+    private Activity mActivity = null;
+
     public MovieDetailActivityFragment() {
     }
 
@@ -55,18 +58,19 @@ public class MovieDetailActivityFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_movie_detail, container, false);
         Bundle arg = getArguments();
         if (arg != null) {
-            movie = (Movie) arg.getSerializable(MOVIE_ID);
-            trailersAdapter = new MovieTrailersAdapter(getActivity(),R.layout.trailer);
-            trailersListView = (ListView) view.findViewById(R.id.trailersList);
-            trailersListView.setAdapter(trailersAdapter);
-            trailersListView.setOnItemClickListener(trailersClickListener);
-            reviewsAdapter = new MovieReviewsAdapter(getActivity(),R.layout.review);
-            reviewsListView = (ListView) view.findViewById(R.id.reviewsList);
-            reviewsListView.setAdapter(reviewsAdapter);
-            DisplayMovieDetails();
-            fetchAndDisplayMovieTrailers();
-            fetchAndDisplayMovieReviews();
-
+            movie = arg.getParcelable(MOVIE_ID);
+            if (mActivity != null) {
+                trailersAdapter = new MovieTrailersAdapter(mActivity, R.layout.trailer);
+                trailersListView = (ListView) view.findViewById(R.id.trailersList);
+                trailersListView.setAdapter(trailersAdapter);
+                trailersListView.setOnItemClickListener(trailersClickListener);
+                reviewsAdapter = new MovieReviewsAdapter(mActivity, R.layout.review);
+                reviewsListView = (ListView) view.findViewById(R.id.reviewsList);
+                reviewsListView.setAdapter(reviewsAdapter);
+                DisplayMovieDetails();
+                fetchAndDisplayMovieTrailers();
+                fetchAndDisplayMovieReviews();
+            }
             Button button = (Button) view.findViewById(R.id.add_to_favorites);
             if (exists())
                 button.setVisibility(View.GONE);
@@ -84,13 +88,23 @@ public class MovieDetailActivityFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mActivity = activity;
+    }
+
     private boolean exists() {
-        Cursor cursor = getActivity().getContentResolver().query(MoviesTable.CONTENT_URI,null,"col_id = " + movie.id,null,null);
+        if (mActivity == null)
+            return false;
+        Cursor cursor = mActivity.getContentResolver().query(MoviesTable.CONTENT_URI,null,"col_id = " + movie.id,null,null);
         return cursor.getCount() > 0;
     }
 
     private void addMovieToDB() {
-        getActivity().getContentResolver().insert(MoviesTable.CONTENT_URI,MoviesTable.getContentValues(movie,true));
+        if (mActivity == null)
+            return;
+        mActivity.getContentResolver().insert(MoviesTable.CONTENT_URI,MoviesTable.getContentValues(movie,true));
         view.findViewById(R.id.add_to_favorites).setVisibility(View.GONE);
     }
 
@@ -116,7 +130,7 @@ public class MovieDetailActivityFragment extends Fragment {
     }
 
     void DisplayMovieDetails() {
-        Picasso.with(getActivity()).load(TheMovieDbInterface.BASE_IMG_URL_SMALL + movie.poster).placeholder(getActivity().getResources().getDrawable(R.drawable.ic_default_poster)).error(getActivity().getResources().getDrawable(R.drawable.ic_default_poster)).into((ImageView) view.findViewById(R.id.movie_detail_poster));
+        Picasso.with(mActivity).load(TheMovieDbInterface.BASE_IMG_URL_SMALL + movie.poster).placeholder(mActivity.getResources().getDrawable(R.drawable.ic_default_poster)).error(mActivity.getResources().getDrawable(R.drawable.ic_default_poster)).into((ImageView) view.findViewById(R.id.movie_detail_poster));
         ((TextView)view.findViewById(R.id.movie_details_title)).setText(movie.title);
         ((TextView)view.findViewById(R.id.movie_detail_date)).setText(movie.date);
         ((TextView)view.findViewById(R.id.movie_detail_rating)).setText(movie.vote_average);
@@ -142,8 +156,10 @@ public class MovieDetailActivityFragment extends Fragment {
     }
 
     private void addToShare(Intent shareIntent) {
+        if (mActivity == null)
+            return;
         try {
-            ((withShare) getActivity()).setShareIntent(shareIntent);
+            ((withShare) mActivity).setShareIntent(shareIntent);
         } catch (ClassCastException e) {}
     }
 

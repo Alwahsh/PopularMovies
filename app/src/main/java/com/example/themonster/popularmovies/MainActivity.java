@@ -51,7 +51,7 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
     public void onItemClick(Movie movie) {
         if (mTwoPane) {
             Bundle args = new Bundle();
-            args.putSerializable(MovieDetailActivityFragment.MOVIE_ID, movie);
+            args.putParcelable(MovieDetailActivityFragment.MOVIE_ID, movie);
             MovieDetailActivityFragment frag = new MovieDetailActivityFragment();
             frag.setArguments(args);
             getSupportFragmentManager().beginTransaction()
