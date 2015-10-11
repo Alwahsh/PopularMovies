@@ -29,6 +29,8 @@ public class MainActivityFragment extends Fragment {
 
 
     public static final String SS_ORDER = "SS_ORDER";
+    private static final String SS_MVGRDSP = "SS_MVGRDSP";
+    private static final String SS_MVS = "SS_MVS";
 
     public MainActivityFragment() {
     }
@@ -54,14 +56,28 @@ public class MainActivityFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
         movieGrid = (GridView) view.findViewById(R.id.main_movies_grid);
         if (mActivity != null) {
+            if (savedInstanceState != null && savedInstanceState.containsKey(SS_ORDER))
+                order = savedInstanceState.getString(SS_ORDER);
             mAdapter = new MoviePostersAdapter(mActivity, R.layout.movie_poster);
             movieGrid.setAdapter(mAdapter);
-            fetchAndDisplayMovies();
+            if (savedInstanceState != null && savedInstanceState.containsKey(SS_MVS)) {
+                movies = (ArrayList<Movie>) savedInstanceState.getSerializable(SS_MVS);
+                addMoviesToAdapter();
+                movieGrid.setSelection(savedInstanceState.getInt(SS_MVGRDSP));
+            } else
+                fetchAndDisplayMovies();
             movieGrid.setOnItemClickListener(mAdapterClickListener);
         }
         return view;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(SS_ORDER, order);
+        outState.putSerializable(SS_MVS, movies);
+        outState.putInt(SS_MVGRDSP, movieGrid.getFirstVisiblePosition());
+    }
 
     @Override
     public void onAttach(Activity activity) {
